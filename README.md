@@ -117,3 +117,17 @@ void runUV() {
   delay(2000);
 }
 ```
+# component pin out
+
+| Component       | Arduino UNO Pin    |
+| --------------- | ------------------ |
+| Button 5 sec    | 2                  |
+| Button 10 sec   | 3                  |
+| Button 15 sec   | 4                  |
+| Button 20 sec   | 5                  |
+| Relay Sanitizer | 6                  |
+| Relay UV        | 7                  |
+| Buzzer          | 8                  |
+| HC-SR04 Trigger | 9                  |
+| HC-SR04 Echo    | 10                 |
+| I2C LCD         | A4 (SDA), A5 (SCL) |
