@@ -526,5 +526,90 @@ void runSanitizerWithPause(int totalSeconds) {
   digitalWrite(RELAY_SANITIZER, LOW);
 }
 ```
+update 
+```
+void runSanitizerWithPause(int totalSeconds) {
+  int remaining = totalSeconds;
+  bool handPresent = true;
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Dispensing...");
+  lcd.setCursor(0, 1);
+  lcd.print("Time Left: ");
+  lcd.print(remaining);
+  lcd.print("s   ");
+
+  digitalWrite(RELAY_SANITIZER, HIGH);
+  unsigned long lastTick = millis();
+  unsigned long handRemovedAt = 0;
+
+  while (remaining > 0) {
+    bool nowPresent = detectHand();
+
+    if (nowPresent && handPresent) {
+      // Normal countdown
+      if (millis() - lastTick >= 1000) {
+        remaining--;
+        lastTick = millis();
+
+        lcd.setCursor(0, 1);
+        lcd.print("Time Left: ");
+        lcd.print(remaining);
+        lcd.print("s   ");
+      }
+    }
+    else if (!nowPresent && handPresent) {
+      // Hand just removed
+      handPresent = false;
+      digitalWrite(RELAY_SANITIZER, LOW);
+      tone(BUZZER_PIN, 1000);  // Continuous beep
+      handRemovedAt = millis();
+
+      lcd.setCursor(0, 1);
+      lcd.print("Hand Removed!   ");
+    }
+    else if (!nowPresent && !handPresent) {
+      // Still waiting for hand
+      if (millis() - handRemovedAt > 10000) {  // 10s timeout
+        noTone(BUZZER_PIN);
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Timed out!");
+        delay(2000);
+        return;  // Cancel session
+      }
+    }
+    else if (nowPresent && !handPresent) {
+      // Hand returned
+      handPresent = true;
+      noTone(BUZZER_PIN);
+      digitalWrite(RELAY_SANITIZER, HIGH);
+
+      lcd.setCursor(0, 1);
+      lcd.print("Resuming...     ");
+      tone(BUZZER_PIN, 1500, 200);
+      delay(600);
+      lcd.setCursor(0, 1);
+      lcd.print("Time Left: ");
+      lcd.print(remaining);
+      lcd.print("s   ");
+
+      lastTick = millis(); // Reset tick
+    }
+
+    delay(50);
+  }
+
+  // Done
+  noTone(BUZZER_PIN);
+  digitalWrite(RELAY_SANITIZER, LOW);
+}
+```
+| Feature          | Behavior                                                             |
+| ---------------- | -------------------------------------------------------------------- |
+| **Timeout**      | If hand not returned in 10s → session ends, LCD shows `"Timed out!"` |
+| **Buzzer alert** | Continuous tone while hand is removed                                |
+| **Cancel/reset** | Entire process resets if hand never comes back                       |
 
  
